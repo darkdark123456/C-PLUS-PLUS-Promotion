@@ -1,0 +1,43 @@
+move 函数有两个重要的功能
+1 从字面意义上看，std::move  可以移交线程的管理权
+2 move的内部原理是改变了对象的类型  假设有一个左值，经过move函数后会变成右值，std::move(T object)      object----------> 右值
+可以将其绑定到T&& obj的右值引用的上，在object即将被析构掉的时候，将资源转交给obj，有一点内存窃取的意思，也就是说，obj本身不需要分配任何的内存资源，直接使用object已经分配好的内存资源，
+这提高了程序的执行效率，通俗的说,在一个对象即将被销毁的时候，又想将他的资源转交给另一个对象，请使用std::move(T object )
+
+/**example**/
+#include<iostream>
+
+
+class MoveManagementPower{
+    private:
+        size_t num;
+    public:
+        MoveManagementPower(/* args */)=default;
+        MoveManagementPower(size_t _num):num(_num){}
+        MoveManagementPower(const MoveManagementPower& object): num (object.num){}
+        MoveManagementPower(MoveManagementPower&& object){
+          this->num=object.num;/**/
+        }
+        ~MoveManagementPower()=default;
+        MoveManagementPower& operator=(const MoveManagementPower& object){
+            this->num=object.num;
+            return *this;
+        };  
+        void printNum(){
+            std::cout<<
+        }
+};
+
+
+
+
+int main(){
+  MoveManagementPower obejct(10);
+  MoveManagementPower object(std::move(object));
+  
+  return 1;
+}
+
+
+
+
