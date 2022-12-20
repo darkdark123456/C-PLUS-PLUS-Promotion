@@ -1,0 +1,16 @@
+void func2(const int& value){
+    std::cout<<"const int& is called"<<std::endl;
+}
+
+
+void func2(int&& value){
+    std::cout<<"int&&  is called"<<std::endl;
+}
+
+
+main(){
+/*传递的是一个常量时，编译器先执行带有&&的如果没有右值引用，再找const int&*/
+func(2); /*int&&*/
+int a=10;
+func2(std::move(a));/*int&&*/
+}
