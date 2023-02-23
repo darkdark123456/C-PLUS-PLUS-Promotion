@@ -1,0 +1,157 @@
+// 假设有一个顾客类，专门处理正在注册的用户
+// 其中一个线程thd1将注册的用户信息送往容器，另一个线程thd2拿到容器里的用户信息进行处理
+// 这样 ，其中一个线程只管收集信息送往到容器，信息的处理用来交给另一个线程。
+
+
+/*在我的实际测试中，最重要的是notify_one()会一直等待一个可以唤醒的wait才会继续往下执行，这也就是他们之间的同步关系可以*/
+#include <thread>
+#include <vector>
+#include <list>
+#include <mutex>
+#include <iostream>
+#include <string>
+#include <condition_variable>
+#include <unistd.h>
+
+struct Information{
+    std::string IDCard;
+    std::string name;
+    int age;
+    std::string address;
+    Information():IDCard(""),name(""),age(0),address(""){}
+    Information(std::string _id,std::string _name,int _age,std::string _address):IDCard(_id),name(_name),age(_age),address(_address) {}
+    Information(const Information& other){
+        this->IDCard=other.IDCard;
+        this->name=other.name;
+        this->age=other.age;
+        this->address=other.address;
+    }
+
+    Information& operator=(const Information& other){
+        this->IDCard=other.IDCard;
+        this->name=other.name;
+        this->age=other.age;
+        this->address=other.address;
+        return *this;
+    }
+    ~Information(){}
+};
+
+class Customer{
+
+    friend std::ostream& operator<<(std::ostream& os,Customer& customer){
+        if(customerInfoQueue.empty()){
+            std::cout<<"infoQueue is empty"<<std::endl;
+        }
+        for(auto iterator=customerInfoQueue.begin();iterator!=customerInfoQueue.end();iterator++){
+            os<<(*iterator).IDCard<<" "<<(*iterator).name<<" "<<(*iterator).age<<" "<<(*iterator).address<<std::endl;
+        }
+        return os;
+
+    }
+    private:
+            static std::list<Information> customerInfoQueue;
+            std::condition_variable Condition;
+            std::mutex mtx;
+    public:
+            Customer(){}
+            Customer(const Customer&)=delete;
+            Customer& operator=(const Customer&)=delete;
+            Customer(Customer&& )=delete;
+            ~Customer(){}
+    public:
+            void waitAndPopForQueue(Information& info);
+            void push(Information info);
+            void prepareData();
+            void processData();
+            void processInfo(Information& info){
+                sleep(1);
+                std::cout<<"正在处理的用户数据 "<<info.IDCard<<" "<<info.name<<" "<<info.age<<" "<<info.address<<std::endl;
+            }
+};
+
+
+// static member init
+std::list<Information> Customer:: customerInfoQueue={};
+
+
+void Customer::waitAndPopForQueue(Information& info){
+    std::unique_lock<std::mutex> lock(mtx);
+    //std::cout<<"waitting............................."<<std::endl;
+    Condition.wait(lock,[this]{return !customerInfoQueue.empty();});
+    info=customerInfoQueue.front();
+    //std::cout<<"waitting done!,正在处理info................"<<std::endl;
+    //std::cout<<"正在处理的用户数据 "<<info.IDCard<<" "<<info.name<<" "<<info.age<<" "<<info.address<<std::endl;
+    customerInfoQueue.pop_front();
+}
+
+
+void Customer::push(Information info){
+    std::lock_guard<std::mutex> lock(mtx);
+    customerInfoQueue.push_back(info);
+    Condition.notify_one();
+}
+
+
+void Customer::prepareData(){
+    Information info("52526626772","zhangsan",65,"shandong province linyi city");
+    for(int index=0;index<10;index++){
+        push(info);
+    }
+}
+
+// 我能用一个wait拿到所有的数据吗？ 由于wait和notify_one的同步关系，可以拿到
+void Customer::processData(){
+    unsigned int length=10;// 用来循环终止的条件
+    while(true){
+        Information info;
+        waitAndPopForQueue(info);
+        processInfo(info);
+        if(--length==0){
+            break;
+        }
+    }
+}
+
+
+int main(){
+    // 先看最简单的情形  一个线程正在等待另一个线程push一个数据
+    Customer customer;
+    // 假设从数据库里导入这样一件信息
+    std::string IDCard="371328192722120001";
+    std::string name="mengzhenchuan";
+    int age=200;
+    std::string address="shandong province,linyi city";
+
+    Information nullInfo;
+    Information info(IDCard,name,age,address);
+//    std::thread thd_1(&Customer::waitAndPopForQueue,&customer,std::ref(nullInfo));
+//    std::thread thd_2(&Customer::push,&customer,std::ref(info));
+
+//    thd_1.join();
+//    thd_2.join();
+
+
+    //推入一个元素 拿到一个元素，推入元素，拿到一个元素......处理模式
+
+    std::thread thd_1(&Customer::processData,&customer);
+    std::thread thd_2(&Customer::prepareData,&customer);
+
+    thd_1.join();
+    thd_2.join();
+    return 1;
+}
+
+
+执行结果
+
+正在处理的用户数据 52526626772 zhangsan 65 shandong province linyi city
+正在处理的用户数据 52526626772 zhangsan 65 shandong province linyi city
+正在处理的用户数据 52526626772 zhangsan 65 shandong province linyi city
+正在处理的用户数据 52526626772 zhangsan 65 shandong province linyi city
+正在处理的用户数据 52526626772 zhangsan 65 shandong province linyi city
+正在处理的用户数据 52526626772 zhangsan 65 shandong province linyi city
+正在处理的用户数据 52526626772 zhangsan 65 shandong province linyi city
+正在处理的用户数据 52526626772 zhangsan 65 shandong province linyi city
+正在处理的用户数据 52526626772 zhangsan 65 shandong province linyi city
+正在处理的用户数据 52526626772 zhangsan 65 shandong province linyi city
