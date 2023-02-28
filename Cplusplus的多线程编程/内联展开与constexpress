@@ -1,0 +1,55 @@
+内联函数在编译时期就进行了内联展开： 
+inline void function(int a,int b){
+  return a+b;
+}
+void Function(int a,int b){
+  return function(a,b);
+}
+在编译时期进行做的是
+void Function(int a,int b){
+  return a+b;
+}
+
+
+常量表达式---->constexpress变量----->constexpress函数--------->constexpress构造函数
+
+const int var=1; //常量表达式
+const int var2=var1+2; // 常量表达式
+
+用constexpress声明一个变量时，主要是为了在编译阶段就能以获取到他的值,该变量的初始化必须用一个常量表达式初始化
+constexpress int v=20;
+constexpress int v2=20+var;
+// 如果size是const express 函数那么它的值在编译时期就确定了，size()也必定会被inline展开为一个常量，此时v3也就在编译时期确定了
+// 如果size在运行时才求得值，那么这与v3在编译时想确定值矛盾，编译会错误。
+constexpress int v3=size();
+constexpr int newsize() { return 42;} /最简单的常量表达式函数,不带有参数/
+constexpr int foo=newsize();  /在编译时期被内联展开为conseexpr int foo=42;在编译时期就能确定foo的值，不必等到函数运行时
+
+
+class  debug{
+private:
+  bool hw;
+  bool io;
+  bool other;
+public:
+  constexpr debug(bool b=true) : hw(b),io(b),other(b) {}
+  constexpr debug(bool h, bool i,bool o) :hw(h),io(i),other(o){}
+  constexpr bool any() {return hw || io || other}
+};
+
+void Function(){
+  constexpr debug object(true,flase,true)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
