@@ -21,6 +21,7 @@ class HasPtr{
 
 
 HasPtr& HasPtr::operator=(const HasPtr& other){
+    if(this==&other) {return *this);
     // 左侧对象的引用计数是否为1？
     if(--*use==0){ // 左侧对象的ps和use指向的内存已经没有用了
         delete use;
