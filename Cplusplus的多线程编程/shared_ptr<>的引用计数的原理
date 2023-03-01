@@ -1,0 +1,58 @@
+#include <iostream>
+#include <string>
+
+
+// 定义类的行为像指针
+class HasPtr{
+        friend std::ostream& operator<<(std::ostream& os,const HasPtr& object){
+            os<<" 对象指向的内容  "<<*object.ps<<" 对象的引用计数为 "<<*object.use<<std::endl;
+            return os;
+        }
+        private:
+            std::string *ps;
+            int i;
+            unsigned int* use;
+        public:
+            HasPtr(const std::string& str=std::string()) : ps(new std::string(str)),i(0),use(new unsigned int(1)){}
+            HasPtr(const HasPtr& other) : i(other.i),ps(other.ps),use(other.use) {++*use;}
+            HasPtr& operator=(const HasPtr& other);
+            ~HasPtr() {if(--*use==0) {delete use; delete ps;}}
+};
+
+
+HasPtr& HasPtr::operator=(const HasPtr& other){
+    // 左侧对象的引用计数是否为1？
+    if(--*use==0){ // 左侧对象的ps和use指向的内存已经没有用了
+        delete use;
+        delete ps;
+    }
+    ++(*other.use);
+    i=other.i;
+    use=other.use;
+    ps=other.ps;
+    return *this;
+}
+
+
+
+void Function(){
+    HasPtr p1("mengzhenhucan");
+    std::cout<<"p1"<<p1;
+    std::cout<<"******************"<<std::endl;
+    HasPtr p2(p1);
+    std::cout<<"p1"<<p1;
+    std::cout<<"p2"<<p2;
+    HasPtr p3("mengqingfu");
+    p2=p3;
+    std::cout<<"******************"<<std::endl;
+    std::cout<<"p1"<<p1;
+    std::cout<<"p2"<<p2;
+    std::cout<<"p3"<<p3;
+}
+
+
+
+int main(){
+    Function();
+    return 1;
+}
