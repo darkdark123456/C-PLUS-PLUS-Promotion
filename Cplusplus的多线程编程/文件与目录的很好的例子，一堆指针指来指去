@@ -1,0 +1,167 @@
+#include <set>
+#include <string>
+#include <iostream>
+
+class Folder;
+class Message;
+
+
+
+class Folder{
+    friend class Message;
+    public:
+        std::string filename;
+    private:
+        std::set<Message*> messages;
+    public:
+        Folder(const std::string& _name="") : filename(_name) {}
+        Folder(const Folder& )=delete;
+        Folder& operator=(const Folder& other)=delete;
+        ~Folder(){}
+    public:
+        void        addMessage(Message* message);
+        void        removeMessage(Message* messge);
+        std::string getFileName() {return filename;}
+};
+
+
+class Message{
+    friend void swap(Message& lhs,Message& rhs);
+    friend std::ostream& operator<<(std::ostream& os,const Message& message){
+        for(auto iterator=message.folders.begin();iterator!=message.folders.end();iterator++){
+            os<<"["<<(*iterator)->getFileName()<<"]"<<"  ";
+        }
+        std::cout<<"content :  "<<message.contents<<std::endl;
+        return os;
+    }
+    private:
+        std::string contents;
+        std::set<Folder*> folders;
+    public:
+        Message(const std::string& str="") : contents(str){}
+        Message(const Message& other): contents(other.contents),folders(other.folders){
+            for(auto iterator=folders.begin();iterator!=folders.end();iterator++){
+                (**iterator).addMessage(this);
+            }
+        }
+        ~Message(){}
+    public:
+        void save(Folder& folder);
+        void remove(Folder& folder);
+        Message& operator=(const Message& rhs);
+    private:
+        void addToFolders(const Message& message);
+        void removeFromFolders();
+};
+
+
+void Folder::addMessage(Message* message){
+    messages.insert(message);
+}
+
+
+void Folder::removeMessage(Message* message){
+    messages.erase(message);
+}
+
+
+void Message::save(Folder& folder){
+    folders.insert(&folder); // 当前message的set里增加一个指向folder的指针
+    folder.addMessage(this); // 当前folder的set里增加一个指向message的指针 ，这个方法未实现
+}
+
+
+void Message::remove(Folder& folder){
+    folders.erase(&folder);      // 删除该message 本来指向folder的指针
+    folder.removeMessage(this); //  删除folder本来指向的message的指针  这个方法未实现
+}
+
+
+void Message::addToFolders(const Message& message){
+    for(auto iterator=folders.begin();iterator!=folders.end();iterator++){
+        (**iterator).addMessage(this);
+    }
+}
+
+
+void Message::removeFromFolders(){
+    for(auto iterator=folders.begin();iterator!=folders.end();iterator++){
+        (**iterator).removeMessage(this);
+    }    
+}
+
+
+Message& Message::operator=(const Message& rhs){
+    if(this==&rhs){ return *this;}
+    removeFromFolders();
+    contents=rhs.contents;
+    folders=rhs.folders;
+    addToFolders(rhs);
+    return *this;
+}
+
+
+
+void swap(Message& lhs,Message& rhs){
+    using std::swap;
+    for(auto iterator=lhs.folders.begin();iterator!=lhs.folders.end();iterator++){
+        (**iterator).removeMessage(&lhs);
+    }
+    for(auto iterator=rhs.folders.begin();iterator!=rhs.folders.end();iterator++){
+        (**iterator).removeMessage(&rhs);
+    }
+
+    swap(lhs.contents,rhs.contents);
+    swap(lhs.folders,rhs.folders);
+    
+    for(auto iterator=lhs.folders.begin();iterator!=lhs.folders.end();iterator++){
+        (**iterator).addMessage(&lhs);
+    }
+
+    for(auto iterator=rhs.folders.begin();iterator!=rhs.folders.end();iterator++){
+        (**iterator).addMessage(&rhs);
+    }
+}
+
+
+
+void Function(){
+    // folder1 里面有两个文件 message1 message2
+    Message message1("this is a text.....");
+    Folder folder1("/home/mzc228699/con");
+    message1.save(folder1);
+    std::cout<<"message1 in folder :  "<<message1;
+    Message message2("mengzhenchuan");
+    message2.save(folder1);
+    std::cout<<"message2 in folder :  "<<message2;
+    std::cout<<"*********************************************************"<<std::endl;
+    Message message3("i am hunger ");
+    Folder folder3("/home/con");
+    message3.save(folder3);
+    std::cout<<"message3 in folder :  "<<message3;
+
+    std::cout<<"交换后...................................."<<std::endl;
+    swap(message2,message3);
+    std::cout<<"message2 in folder :  "<<message2;
+    std::cout<<"message3 in folder :  "<<message3;
+
+    std::cout<<"测试拷贝构造函数.................................."<<std::endl;
+    Message message4(message3);
+    std::cout<<"message4 in folder :  "<<message4;
+}
+
+
+int main(){
+    Function();
+    return 1;
+}
+
+
+
+
+
+
+
+
+
+
