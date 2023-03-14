@@ -1,0 +1,468 @@
+/*
+ * @author: MENG ZHEN CHUAN
+ * @date: Date
+ * @description: HADOOP Project
+ * @method: note
+ */
+/*
+ * @author: MENG ZHEN CHUAN
+ * @date: Date
+ * @description: HADOOP Project
+ * @method: note
+ */
+/*
+ * @author: MENG ZHEN CHUAN
+ * @date: Date
+ * @description: HADOOP Project
+ * @method: note
+ */
+/*
+ * @author: MENG ZHEN CHUAN
+ * @date: Date 2023-3-7
+ * @description: Big Text Query programming 
+ * @method: note
+ */
+#include <string>
+#include <map>
+#include <set>
+#include <vector>
+#include <fstream>
+#include <memory>
+#include <stdexcept>
+#include <sstream>
+#include <iostream>
+#include <stdexcept>
+#include <list>
+#include "build.h"
+
+/*将所有的查询结果都保存在这个类里面*/
+class QueryResult{
+    friend std::ostream& operator<<(std::ostream& os,const QueryResult& object){
+        os<<"search/not word is : "<<object.sought<<" "<<std::endl;
+        os<<"row size    "<<object.rowPoint->size()<<std::endl;
+        os<<"row in  "<<std::endl;
+        for(auto iterator=object.rowPoint->begin();iterator!=object.rowPoint->end();iterator++){
+                std::cout<<*iterator<<" "<<(*(object.filePointer)).at(*iterator)<<std::endl;
+        }
+        std::cout<<std::endl;
+        return os;
+    }
+    public:
+        QueryResult(std::string _sought,std::shared_ptr<std::set<size_t>> _rowPoint,std::shared_ptr<std::vector<std::string>> _filePointer):
+        sought(_sought),rowPoint(_rowPoint),filePointer(_filePointer) {}
+        QueryResult(){}
+        ~QueryResult(){}
+    public:
+        std::shared_ptr<std::set<size_t>> begin() const{
+            return rowPoint;
+            
+        }
+        std::shared_ptr<std::set<size_t>> end() const{
+            return rowPoint;
+        }
+        std::shared_ptr<std::vector<std::string>> getFile(){
+            return filePointer;
+        }
+    private:
+        std::string sought;
+        std::shared_ptr<std::set<size_t>> rowPoint;
+        std::shared_ptr<std::vector<std::string>> filePointer;
+};
+
+
+
+/*具体的查询工作交由它展开，它只需一个fstream 的文件流来初始化*/
+class TextQuery{
+    public:
+            using lineNO=std::vector<std::string>::size_type;
+    private:
+            std::shared_ptr<std::vector<std::string>> fileContentPtr;
+            std::map<std::string,std::shared_ptr<std::set<lineNO>>> lineNOMap;
+    public:
+            TextQuery(){}
+            TextQuery(std::fstream& );
+            ~TextQuery(){}
+    public:
+            QueryResult query(const std::string& word) const;
+            void catLineNOMap(std::string word) const;
+            std::shared_ptr<std::set<lineNO>> getKeyLineNoSet(std::string& key) const{
+               if(key!="" && lineNOMap.find(key)!=lineNOMap.end()){
+                    return lineNOMap.at(key);
+               }
+               return std::shared_ptr<std::set<lineNO>>();
+            }
+            unsigned int getFileContentSize() const{
+                return fileContentPtr->size(); 
+            }
+            std::shared_ptr<std::vector<std::string>> getFileContentPtr() const{
+                return fileContentPtr;
+            }
+};
+
+
+/*将文本的每一行内容都作为vector的一个元素*/
+TextQuery::TextQuery(std::fstream& file) : fileContentPtr(new std::vector<std::string>) {
+    if(!file.is_open()){
+        throw std::runtime_error("file opened failed");
+    }
+    std::string text;
+    while(getline(file,text)){
+        fileContentPtr->push_back(text);
+        TextQuery::lineNO currentRow=fileContentPtr->size()-1;
+        std::istringstream istream(text);
+        std::string word;
+        while(istream>>word){
+            auto & sharedPtr=lineNOMap[word];
+            if(sharedPtr==nullptr){
+                sharedPtr.reset(new std::set<lineNO>);
+            }
+            sharedPtr->insert(currentRow);
+        }
+    }
+}
+
+
+/*查询具体的word的接口*/
+QueryResult TextQuery::query(const std::string& word) const{
+    auto findIterator=lineNOMap.find(word);
+    if(findIterator!=lineNOMap.end()){
+        return QueryResult(word,findIterator->second,fileContentPtr);
+    }
+    return QueryResult(word,std::make_shared<std::set<size_t>>(),fileContentPtr);
+}
+
+
+/*这是一个辅助函数，用来查看是否获取刀了查询内容*/
+void TextQuery::catLineNOMap(std::string word) const{}
+
+
+/*作为一个查询的抽象基类，它的派生类可以有普通的查询，或查询，与查询，非查询......*/
+class QueryBase{
+    //原书定义为protected，在Query里用指针是访问不了的
+    public:
+        using lineNO=TextQuery::lineNO;
+        virtual ~QueryBase()=default;
+    // 原书定义为private： 同上
+    public:
+        virtual QueryResult eval(const TextQuery&,std::string word="",std::string word_2="") const=0;/*每个查询都应该重写自己的具体eval操作*/
+        virtual std::string rep() const=0;/*每个查询都应该重写自己的rep操作*/
+};
+
+
+
+/** This class find the special word in the text by TextQuery object*/
+class WordQuery : public QueryBase{
+    private:
+        std::string queryWord;
+    public:
+        WordQuery(const std::string& word) : queryWord(word){}
+        ~WordQuery()=default;
+    public:
+        std::string rep() const {return queryWord;}
+        QueryResult eval(const TextQuery& object,std::string word="",std::string word2="") const override{
+            return object.query(queryWord);
+        }
+        std::string getQueryWord(){
+            return queryWord;
+        }
+};
+
+
+/*note: use the WordQuery object*/
+/**This class excute Not operator, for example , not "meng" it reply that you will find all the word in text except "meng",*/
+class NotQuery : public QueryBase{
+    public:
+        NotQuery()=default;
+        ~NotQuery()=default;
+    public:
+        std::string rep() const override {
+            return "";
+        } /*先不重写rep方法*/
+        QueryResult eval(const TextQuery& object,std::string word="",std::string word_2="") const override{
+            /*将不含有word的行号添加到新的set中*/
+            auto sp=object.getKeyLineNoSet(word);
+            auto fileSize=object.getFileContentSize();
+            auto filesp=object.getFileContentPtr();
+            std::set<size_t> rowSet;
+            for(unsigned int index=0;index<fileSize;index++){
+                if (sp->find(index)!=sp->end()){
+                    continue;
+                }
+                rowSet.insert(index);
+            }
+            return QueryResult(word,std::make_shared<std::set<size_t>>(rowSet),filesp);
+        }
+};
+
+
+class ORQuery : public QueryBase{
+    public:
+        ORQuery()=default;
+        ~ORQuery()=default;
+    public:
+        std::string rep() const override{
+            return "";
+        }
+        QueryResult eval(const TextQuery& object,std::string word="",std::string word_2="") const override{
+            auto shared_pointer_1=object.getKeyLineNoSet(word);
+            auto shared_pointer_2=object.getKeyLineNoSet(word_2);
+            auto fileSize=object.getFileContentSize();
+            auto filesp=object.getFileContentPtr();
+            std::shared_ptr<std::set<std::size_t>> sp1(new std::set<std::size_t>());
+            std::string fixWord=word+"|"+word_2;
+
+            for (auto iterator=shared_pointer_1->begin();iterator!=shared_pointer_1->end();iterator++){
+                sp1->insert(*iterator);
+            }
+
+            for (auto iterator=shared_pointer_2->begin();iterator!=shared_pointer_2->end();iterator++){
+                sp1->insert(*iterator);
+            }
+
+            return QueryResult(fixWord,sp1,filesp);
+        }
+};
+
+
+/**This is a implement class for QueryBase*/
+class Query{
+    friend Query operator~(const Query& object){
+        std::shared_ptr<QueryBase> sp(new NotQuery());
+        return Query(sp);     
+    }
+    friend Query operator|(Query& lhs ,Query& rhs){
+        std::shared_ptr<QueryBase> sp(new ORQuery());
+        return Query(sp);
+    }
+    friend Query operator &(const Query& ,const Query& ){
+        return *(new Query());
+    }
+    public:
+        Query operator()(const std::string& word){
+            this->word=word;
+            return Query(std::shared_ptr<QueryBase>(new WordQuery(word))); 
+        }
+    private:
+        std::shared_ptr<QueryBase> sharedPointer;
+        std::string word;
+    public:
+        Query(){};
+        inline Query(const std::string& word):sharedPointer(new WordQuery(word)){}
+        inline Query(std::shared_ptr<QueryBase> sp):sharedPointer(sp){}
+        ~Query()=default;
+    public:
+        QueryResult eval(const TextQuery& object,std::string word="",std::string word_2=""){
+            return sharedPointer->eval(object,word,word_2);
+        }
+        std::string rep() {
+            return sharedPointer->rep();
+        }
+        std::string getWord(){
+            return word;
+        }
+};
+
+
+int Function(){
+    std::fstream file;
+    file.open("c://data//text.txt");
+    if(!file.is_open()){
+        throw std::logic_error("file opened fail ");
+    }
+    TextQuery TextQueryObject(file);
+    return 1;
+}
+
+
+/**
+ * @brief This function support four query model,o:ordinary，~ :Not ，&:and，|:or
+ * @return int
+ */
+int Function2(){
+    /*现在提出一种新的查询方式 只需定义一个Query对象，传递给它一个TextQuery object就可完成所有的工作*/
+    std::fstream file;
+    std::cout<<std::endl;
+    std::cout<<std::endl;
+    std::cout<<std::endl;
+    std::cout<<"******文本数据库系统******"<<std::endl;
+    for(unsigned int index=0;index<8;index++){
+    std::cout<<"*                              *"<<std::endl;
+    }
+    std::cout<<"******   File Search      ******"<<std::endl;
+    std::cout<<std::endl;
+    std::cout<<"Input File Path "<<std::endl;
+    std::string filepath;
+    std::cin>>filepath;
+    file.open(filepath);
+    TextQuery object(file);
+    Query lquery;
+    Query rquery;
+    while (true){
+        std::cout<<std::endl;
+        std::cout<<"Input search word ,or input # finish current programming !"<<std::endl;
+        std::string word;
+        std::cin>>word;
+        if(word=="#"){ break; }
+        std::cout<<"input your query model,it depends o model, ~ model & model | model"<<std::endl;
+        char model;
+        std::cin>>model;
+        QueryResult result;
+        Query QueryObject=lquery(word);
+        switch (model){
+        case 'o':
+            result=QueryObject.eval(object);
+            std::cout<<result;
+            break;
+        case '!':
+            result=(~QueryObject).eval(object,lquery.getWord());
+            std::cout<<result<<std::endl;
+            break;
+        case '|':{
+            std::cout<<"input right operator object the word"<<std::endl;
+            std::string w;
+            std::cin>>w;
+            Query rightQueryOnject=rquery(w);
+            std::cout<<rquery.getWord()<<std::endl;
+            Query orObejct=(QueryObject|rightQueryOnject);
+            QueryResult result=orObejct.eval(object,lquery.getWord(),rquery.getWord());
+            std::cout<<result<<std::endl;
+            break;
+        }
+            
+        default:
+            std::cout<<"noting to get"<<std::endl;
+            break;
+        }
+    }
+}
+
+
+
+
+/**
+ *  This function is used to test the word query programming
+*/
+void wordQueryFunction(){
+    std::fstream file;
+    std::cout<<std::endl;
+    std::cout<<std::endl;
+    std::cout<<"******新的文本数据库系统******"<<std::endl;
+    for(unsigned int index=0;index<8;index++){
+    std::cout<<"*                              *"<<std::endl;
+    }
+    std::cout<<"******   File Search      ******"<<std::endl;
+    std::cout<<std::endl;
+    std::cout<<"Input File Path "<<std::endl;
+    std::string filepath;
+    std::string word;
+    std::cin>>filepath;
+    file.open(filepath);
+    if(!file.is_open()){
+        throw std::logic_error("file opened fail !");
+    }
+    std::cout<<"input you search word"<<std::endl;
+    std::cin>>word;
+    TextQuery textQueryObject(file);
+    Query query(word);
+    QueryResult result=query.eval(textQueryObject);
+    std::cout<<result<<std::endl;
+}
+
+
+void NotOperatorFunction(){
+
+
+}
+
+
+
+void runQueries(std::fstream& file){
+    std::cout<<std::endl;
+    std::cout<<std::endl;
+    std::cout<<"******新的文本数据库系统******"<<std::endl;
+    for(unsigned int index=0;index<8;index++){
+    std::cout<<"*                              *"<<std::endl;
+    }
+    std::cout<<"******   File Search      ******"<<std::endl;
+    std::cout<<std::endl;
+    std::cout<<"Input File Path "<<std::endl;
+    std::string filepath;
+    std::cin>>filepath;
+    file.open(filepath);
+    TextQuery object(file);
+    while(true){
+        std::cout<<std::endl;
+        std::cout<<"Input search word ,or input # finish current programming !"<<std::endl;
+        std::string word;
+        std::cin>>word;
+        if(word=="#"){ break; }
+        QueryResult res=object.query(word);
+        std::cout<<"*****************************************************"<<std::endl;
+        std::cout<<std::endl;
+        std::cout<<res<<std::endl;
+        std::cout<<"*****************************************************"<<std::endl;
+        std::cout<<std::endl;
+    }
+}
+
+
+class DebugDelete{
+    private:
+        std::ostream& os;
+    public:
+        DebugDelete(std::ostream& _os=std::cerr):os(_os){}
+        template<typename T>
+        void operator()(T* p) const{
+            os<<"deleting unique_ptr"<<std::endl;
+            delete p;
+        }
+};
+
+
+template<typename T>
+class Blob{
+    private:
+        std::shared_ptr<std::vector<T>> sp;
+    public:
+        template<typename Iterator>
+        Blob(Iterator first,Iterator last) : sp(std::make_shared<std::vector<T>>(first,last)){
+            std::cout<<"我将接管内存"<<std::endl;
+            std::cout<<sp.use_count()<<std::endl;
+        }
+
+};
+
+
+
+extern template class Blob2<int>;
+
+int Function3(){
+    double* p=new double;
+    DebugDelete debugDelete;
+    debugDelete(p);
+    int* p1=new int;
+    debugDelete(p1);
+    std::unique_ptr<int,DebugDelete> p3(new int,DebugDelete());
+    std::unique_ptr<std::string,DebugDelete> p4(new std::string,DebugDelete());
+
+    int array[]={0,1,2,3,4,5,6,7};
+    std::vector<long> vlong{1,2,3,4,5};
+    std::list<const char*> word={"now","is","the","time"};
+    Blob<int> a1(vlong.begin(),vlong.end());
+    Blob<const char*> s1(word.begin(),word.end());
+
+
+    return 1;
+}
+
+
+int main(int argc, char const *argv[]){
+    // std::fstream file;
+    // runQueries(file);
+    //wordQueryFunction();c:
+
+    //wordQueryFunction();
+    //Function2();
+    Function3();
+    return 0;
+}
