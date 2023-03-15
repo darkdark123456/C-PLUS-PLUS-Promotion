@@ -1,0 +1,28 @@
+// 这里重新写一下bind函数，将一个多餐函数绑定在一个少参的可调用对象上/函数指针上
+void ff(int a,int b,int c, const int& d,int e){
+	std::cout<<a<<" "<<b<<" "<<c<<" "<<d<<" "<<e<<" "<<std::endl;
+}
+
+int gg(int n){
+	return n;
+}
+
+struct Foo{
+	void printSum(int m,int n){
+		std::cout<<m+n<<std::endl;
+	}
+};
+
+
+void Function6(){
+	/*使用bind绑定普通函数*/
+	using namespace std::placeholders;
+	int n=7;
+	auto f1=std::bind(ff,_2,42,_1,std::ref(n),n);
+	f1(1,2,1001);
+	/*使用bind绑定lambda函数*/
+	auto callableObject=[&reference=n,n](auto m,auto b){
+		ff(m,42,b,reference,n);
+	};
+	callableObject(1,2);
+}
