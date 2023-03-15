@@ -12,6 +12,8 @@
 #include <utility>
 #include <chrono>
 
+// 使用make_ready_at_thread_exit确保在函数退出时，关联的Task任务已经异步执行完毕并将结果准备就绪
+
 void Worker(std::future<int>& output) {
 	std::packaged_task<int(bool&)> Task([](bool& done) ->int { done = true;
         for (size_t i = 0; i < 5; i++){
@@ -48,3 +50,68 @@ int main(int argc, char const *argv[])
 
     return 0;
 }
+
+
+
+//各种调用task包装的可调用对象的例子
+
+int function(int x,int y){
+	return std::pow(x,y);
+}
+
+
+
+// 直接在当前线程内执行Task的任务 采用匿名函数方式
+void TaskLambda(){
+	std::packaged_task<int(int,int)> Task([](int a,int b) ->int {return std::pow(a,b);});
+	std::future<int> fut=Task.get_future();
+	Task(2,3); 
+	std::cout<<"task lambda "<<fut.get()<<std::endl;
+}	
+
+// 使用bind将函数绑定给Task，直接调用Task（） 运行 Task关联的任务
+void TaskBind(){
+	std::packaged_task<int()> Task(std::bind(function,2,4));
+	std::future<int> fut=Task.get_future();
+	Task();
+	std::cout<<" task bind "<<fut.get()<<std::endl;
+}
+
+
+// 采用异步的方式，开辟一个新线程去执行
+void TaskThread(){
+	std::packaged_task<int(int,int)> Task(function);
+	std::future<int> fut=Task.get_future();
+	std::thread  thd1(std::move(Task),2,5);
+	std::cout<<"task thread"<<fut.get()<<std::endl;
+	thd1.detach();
+}
+
+
+//  采用reset成员方法 来切断package_task<>包装的可调用对象与之关联的future之间的联系，但是这个可嗲用
+对象还一直包装在内没有消失
+
+
+void Function7(){
+	std::packaged_task<int(int,int)> Task([](int m,int n){return std::pow(m,n);});
+	std::future<int> fut=Task.get_future();
+	Task(2,3);
+	std::cout<<"result "<<fut.get()<<std::endl;
+	bool flag=Task.valid();
+	std::cout<<" task packaged func is valid? "<<flag<<std::endl;
+	Task.reset();
+	std::cout<<"result "<<fut.get()<<std::endl;
+        flag=Task.valid();
+	std::cout<<" task packaged func is valid? "<<flag<<std::endl;
+
+}
+
+////////////////////////运行结果//////////////////////////
+result 8
+ task packaged func is valid? 1
+result terminate called after throwing an instance of 'std::future_error'
+  what():  std::future_error: No associated state
+PS C:\Users\Administrator\Desktop\ubuntu20File>
+
+
+
