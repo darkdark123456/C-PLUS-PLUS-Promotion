@@ -1,0 +1,70 @@
+#include <shared_mutex>
+#include <iostream>
+#include <thread>
+#include <chrono>
+
+
+std::shared_mutex share_mutex;
+int i=10;
+
+
+
+/*下面的成员测试的是lock成员函数*/
+std::string file="original content";
+std::mutex outputMutex;
+std::shared_mutex fileMutex;
+
+
+/*测试的是构造函数*/
+void reader(int id){
+    std::shared_lock<std::shared_mutex> slock(share_mutex);
+    const int ii=i;
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    std::cout<<" reader " <<ii<<std::endl;
+}
+
+
+/*测试的是lock成员*/
+void ReadContent(int ID){
+    std::string content;
+    {
+        std::shared_lock lock(fileMutex,std::defer_lock);
+        lock.lock();
+        content=file;
+        std::cout<<"file is "<<content<<std::endl;
+    }
+    std::lock_guard<std::mutex> lock(outputMutex);
+    std::cout<<" id    "<<ID<<" reading "<<std::endl;
+}
+
+
+void writeContent(){
+    {
+        std::lock_guard<std::mutex> file_lock(outputMutex);
+        file="new content";
+    }
+    std::lock_guard<std::mutex> outputLock(outputMutex);
+}
+
+
+
+
+
+int main(){
+    std::thread thread1(reader,i);
+    std::thread thread2(reader,i);
+    thread1.join();
+    thread2.join();
+    std::cout<<"******************************"<<std::endl;
+    std::cout<<"Two readers reading from file\\n .A writer competes with them\n";
+    
+    std::thread reader1(ReadContent,1);
+    std::thread  reader2(ReadContent,2);
+    std::thread writer(writeContent);
+    reader1.join();
+    reader2.join();
+    writer.join();
+    return 1;
+}
+
+
