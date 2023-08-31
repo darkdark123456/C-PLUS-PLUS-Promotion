@@ -1,0 +1,30 @@
+
+// 返回的是auto 被推断为string& 
+
+template<typename Iterator>
+auto Function(Iterator first, Iterator last) -> decltype(*first){
+
+	if (last - first) {
+		return *first;
+	}
+
+	 // std::cout << typeid(decltype(*first)).name(); 打印类型名
+}
+
+// 如果想移除引用标志 typename std::remove_reference<T&>::type -----> type  
+template<typename Iterator>
+auto Function1(Iterator first, Iterator last) -> typename std::remove_reference<decltype(*first)>::type {
+
+	if (last - first) {
+		return *first;
+	}
+}
+
+
+int main() {
+
+	std::vector<std::string> words{ "meng", "zhao", "xiang" };
+	std::string& str = Function(words.begin(), words.end());
+	std::string str2 = Function1(words.begin(), words.end());
+	return 1;
+}
