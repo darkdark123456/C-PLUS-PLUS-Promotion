@@ -1,0 +1,106 @@
+#include <iostream>
+#include <thread>
+#include <mutex>
+#include <future>
+
+
+// 考虑指令优化的问题
+
+// 全局只存在一个实例 例如 窗口对象  配置文件对象
+
+  
+
+// 被volatile修饰的变量 从声明 到定义 再到引用返回 会一直存在 直到死亡 
+// 修饰 变量声明 ：        编译器你不要做优化了
+// 修饰 变量定义 :         编译器你不要优化了 
+// 修饰 变量作为引用返回 :  告诉程序员 我返回的引用是没有被优化过的  
+
+class Singleton {	
+	private:
+		static  volatile Singleton* Object;
+		static std::mutex mtx;
+		static int WinNumber;
+	private:
+		Singleton() {
+
+		}
+
+	public:
+		static  volatile Singleton*& getInstance() {
+			if (Object == nullptr) {
+				
+				std::lock_guard<std::mutex> lock(mtx); 
+				
+				
+				{
+					if (Object == nullptr) {
+
+						Object = new Singleton();
+						Object->WinNumber = 1001;
+					}
+				}
+
+			}
+			return Object;
+		}
+
+
+		static int GetWinNumber() {
+
+			return Object->WinNumber;
+		}
+
+
+		static void DeconstructInstance() {
+			if (Object) {
+				delete Object;
+			}
+		}
+};
+
+
+volatile Singleton*  Singleton::Object = nullptr;
+std::mutex Singleton::mtx;
+int Singleton::WinNumber = 0;
+
+/*
+
+int main() {
+
+	// 单线程模式下
+
+	//volatile Singleton* & object1 = Singleton::getInstance();
+	//volatile Singleton* & object2 = Singleton::getInstance();
+	//if (object1==object2) {
+//	std::cout << "==" << std::endl;
+//}
+
+//Singleton::DeconstructInstance();
+
+
+
+
+
+	// 使用异步执行时
+	
+	std::future <volatile Singleton* &> fut1  = std::async(std::launch::async,&Singleton::getInstance);
+	std::future <volatile Singleton* &> fut2  = std::async(std::launch::async, &Singleton::getInstance);
+	std::future <volatile Singleton*&> fut3 = std::async(std::launch::async, &Singleton::getInstance);
+
+	volatile Singleton* & object_1=fut1.get();
+	volatile Singleton* & object_2=fut2.get();
+	volatile Singleton*& object_3 = fut3.get();
+
+	std::cout << object_1->GetWinNumber() << std::endl;
+	std::cout << object_2->GetWinNumber() << std::endl;
+	std::cout << object_3->GetWinNumber() << std::endl;
+
+	// 全部输出1001
+
+
+
+
+
+
+	return 1;
+}*/
