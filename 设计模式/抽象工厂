@@ -1,0 +1,95 @@
+#include <iostream>
+#include <string>
+
+// 假设一个工厂里开发不同的操作系统和应用
+
+
+// 抽象产品
+class OS {
+public:
+	virtual std::string getName() = 0;
+};
+
+class Application {
+public:
+	virtual std::string getName() = 0;
+
+};
+
+
+// 抽象工厂 ，抽象工厂里抽象产品
+class AbstractFactory {
+	public:
+		virtual OS* createOS() = 0;
+		virtual Application* createApplication() = 0;
+
+};
+
+
+// 具体产品  开发的window10
+class WindowOs : public OS {
+	    std::string getName() override {
+		return "window10 os ";
+	}
+};
+
+// 具体产品 开发的linux
+class LinuxOS : public OS {
+	    std::string getName() override {
+		return "linux os";
+	}
+};
+
+// 开发具体的win10应用
+class WinApp : public Application{
+	    std::string getName() override {
+		return "win10 app";
+	}
+
+
+};
+
+// 开发具体的linux应用
+class LinuxApp : public Application {
+	std::string getName() override {
+		return "linux app";
+	}
+};
+
+
+class WinFactory : public AbstractFactory {
+	public:
+		OS* createOS() override {
+			return new WindowOs();
+		}
+
+		Application* createApplication() override{
+			return new WinApp();
+		}
+};
+
+
+// const char* function() {
+//
+//	 return "111";
+//}
+
+ const std::string function() {
+
+	 return "111";
+ }
+
+
+int main() {
+
+	AbstractFactory* winfactory = new WinFactory(); // 建立一个具体工厂win
+	OS* os=winfactory->createOS();  // 用win工厂生产win10系统
+	Application* app=winfactory->createApplication(); // 用win工厂里生产winapp
+
+	std::cout<<os->getName(); 
+	std::cout << std::endl;
+	std::cout<<app->getName();
+
+
+	return 1;
+}
