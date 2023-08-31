@@ -1,0 +1,161 @@
+// 构造者模式   手机对象由指挥者构建
+
+// 考虑实现一个手机的复杂类 可以先将手机解耦为cpu gpu 屏幕 摄像头 系统 其他硬件
+// 然后 将这些零件组成手机对象，零件/系统的型号不同 可以导致的组装起来的手机不同 
+// >构造者类< 指出构造什么类型的手机， 具体的构造对象和构造的顺序由 >指挥者< 完成
+
+#include <string>
+#include <iostream>
+
+
+class HuaWeiBuilder;  // 先进性类声明 之后定义
+
+
+class Phone{
+	friend class HuaWeiBuilder; // Phone类是HuaWeiBuilder类的朋友 后者可以访问前者的全部对象的私有内容
+	private:
+		std::string cpu;
+		std::string gpu;
+		std::string screen;
+		std::string camera;
+		std::string os;
+		std::string other;
+	public:
+		Phone() = default;
+		~Phone() = default;
+	private:
+		void setCPU(const std::string& cpuInfo) {
+			cpu = cpuInfo;
+		}
+
+		void setGPU(const std::string& gpuInfo) {
+			gpu = gpuInfo;
+		}
+
+		void setScreen(const std::string& screenInfo) {
+			screen = screenInfo;
+		}
+
+		void setCamera(const std::string& camersInfo) {
+			camera = camersInfo;
+		}
+
+		void setOS(const std::string& osInfo) {
+			os = osInfo;
+		}
+
+		void setOther(const std::string& otherInfo = " ") {
+			other = otherInfo;
+		}
+	public:
+		void showInfo() {
+			std::cout << "该手机信息如下\n" << "cpu " << cpu << "\ngpu" << gpu << "\nscreen" << screen << "\ncamera" << camera << "\nos" << os << "\nother" << other << std::endl;
+		}
+
+};
+
+class Builder{
+	public:
+		virtual void buildCPU() = 0;
+		virtual void buildGPU() = 0;
+		virtual void buildScreen() = 0;
+		virtual void buildCamera() = 0;
+		virtual void buildOS() = 0;
+		virtual void buildOther() = 0;
+};
+
+
+// 一个可以创建不同华为型号的手机 
+class HuaWeiBuilder : public Builder {
+	private:
+		Phone HuaWei;
+	public:
+		void buildCPU() override {
+			HuaWei.setCPU("krlin9000s");
+		}
+
+		void buildGPU() override {
+			HuaWei.setGPU("KunLun");
+		}
+
+		void buildScreen() override {
+			HuaWei.setScreen("JingDongFang");
+		}
+
+		void buildCamera() override {
+			HuaWei.setCamera("ZiYan");
+		}
+
+		void buildOS() override {
+			HuaWei.setOS("HMOS");
+		}
+
+		void buildOther() override {
+			HuaWei.setOther("完全自研");
+		}
+
+		void getHuaWeiInfo() {
+			HuaWei.showInfo();
+		}
+
+		Phone getPhone() {
+			return HuaWei;
+		}
+};
+
+
+// 由指挥者创建对象
+class Director {
+	public:
+		Phone creatPhone(HuaWeiBuilder*& huaweiBuild  ) {
+			huaweiBuild->buildCPU();
+			huaweiBuild->buildGPU();
+			huaweiBuild->buildScreen();
+			huaweiBuild->buildCamera();
+			huaweiBuild->buildOS();
+			huaweiBuild->buildOther();
+			return huaweiBuild->getPhone();
+		}
+};
+
+
+
+int main() {
+
+	HuaWeiBuilder* huaweiBuild = new HuaWeiBuilder();
+	Director* director = new Director();
+	Phone huawei=director->creatPhone(huaweiBuild);
+	huawei.showInfo();
+
+	delete huaweiBuild;
+	delete director;
+	return 1;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
