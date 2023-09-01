@@ -1,1 +1,71 @@
+要理解 move是如何工作的 先了解引用折叠 
+一般来说 下面的写法是不合法的 将一个左值作为参数传递给右值
+template<typename T>
+void ff(T && value ){
+ //
+}
+
+int main(){
+  int i=10;
+  ff(10); // 将一个常量 右值 短暂的值 绑定在右值引用上是没有问题的，value对这个常量只有read
+  ff(i);  // 将一个变量绑定在右值引用上那就不合逻辑了 你怎么可以将一个持久的值绑定在一个具有短暂生命周期的右值上呢
+}
+
+// 为了不违反逻辑 c++提出了引用折叠机制  i 将使T 推断为int& 而不是 int 我们知道 int& &&会被折叠为int&
+// 这样传输就合法了 
+
+
+
+
+
+std::move的定义如下
+template<typename T >
+// 移除T 中的引用属性 返回的类型是int&& string&&
+typename remove_reference<T>::type&& move(T&& t){
+
+return static_cast<typename remove_reference<T>::type&& >(t); // 无论如何t都会是引用类型 如int&& string&&
+
+}
+
+
+int main(){
+  string s1("mengzhenchuan");
+  string s2=std::move(string("hello")); //<---> string s2(std::move(string("hello"))); 正确 s2接管这块常量 
+  s2=std::move(s1); // 
+
+  string s3(std::move(s1));
+}
+
+对于第一个工作流程
+1 传入参数string("hello") 推断 T 为string 进而
+2 返回值类型被具例化为 typename remove_reference<string>::type&& --->string&& 
+3 返回语句被具例化为 return static_cast<typename remove_reference<string>::type&&>(t)
+4 return static_cast<string&&>(t)
+5 return t 其中t为string&&类型
+6 调用string的移动构造函数构造s2
+
+
+
+对于第二个工作工作流程 我们看看左值是如何绑定到右值最终变为右值类型的
+1 传入参数s1 推断T 为string& 而不是string
+2 使用引用折叠机制 string & && --->string &
+3 整个函数特例化 
+   typename remove_reference<string&>::type&& move(string& t){
+
+    return static_cast<typename remove_reference<string&>::type&& >(t);
+
+   }
+
+---->
+
+   string && move(string& t){
+
+    return static_cast<string&& >(t);
+
+   }
+--->最终s1变为右值，生命变得短暂，调用s3移动构造函数构造s3 string s3(std::move(s1));
+
+
+
+
 
