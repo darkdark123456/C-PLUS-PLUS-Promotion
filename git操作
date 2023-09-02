@@ -1,0 +1,14 @@
+1 配置本地仓库的用户名和邮箱
+$ git config --global user.name "runoob"
+$ git config --global user.email test@runoob.com
+
+2 在指定目录初始化仓库
+git init ://git
+
+3 add commit文件到本地仓库中
+git add test.txt
+git commit -m "info"
+
+4克隆仓库 
+git clone xxx.git
+
