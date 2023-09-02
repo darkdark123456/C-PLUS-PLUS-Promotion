@@ -7,8 +7,39 @@ git init ://git
 
 3 add commit文件到本地仓库中
 git add test.txt
-git commit -m "info"
+git commit [filename] -m "info"
 
 4克隆仓库 
 git clone xxx.git
+
+5 远程提交
+git brance // 列出分支
+git remote add origin xxx.git // 添加远程连接
+git push -u origin master  // 所有commit的文件进行推送
+
+6 回退版本
+git reset Head^1 [filename]
+
+7 fetch 查看最新提交信息 这些新的提交不会合并到你的当前分支之中
+  git  fetch
+  git  branch -f 查看远程分支xinxi
+  git  show-branch  origin/main  查看远程origin main分支的详细信息
+  git  log HEAD.. origin/main 查看本地main分支和远程main分支之间的差异提交
+
+8 git diff 
+
+git diff origin/branch-name..branch-name // 比较远程分支和本地分支之间的差异
+git diff [filename] // 显示暂存区的文件和工作区的文件之间的差异
+git diff --cached [filed]  // 显示暂存区和上一次提交之间的差异
+git diff branch-name..another-branch //比较两个分支不同的差异
+
+ 
+9 git pull
+  git pull origin // 合并远程和本地分支
+
+
+ 
+
+
+
 
