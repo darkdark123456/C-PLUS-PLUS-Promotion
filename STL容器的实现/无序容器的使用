@@ -78,7 +78,7 @@ int main(){
     Foo foo2(11);
     Foo foo3(12);
 
-    std::unordered_map<Foo,std::string,std::hash<Foo>> mm={ // 在插入之前先判断key相等吗？ 相等什么也不做 ，不等开始进行hash计算
+    std::unordered_map<Foo,std::string,std::hash<Foo>> mm={ // 在插入之前先判断key相等吗？会调用内置的operator==或者重写的operator==, 相等什么也不做 ，不等开始进行hash计算
       {foo1,"income_1"},
       {foo2,"income_2"},
       {foo3,"income_3"}  
