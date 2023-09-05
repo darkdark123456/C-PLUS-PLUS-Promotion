@@ -1,0 +1,93 @@
+#include    <bitset>
+#include    <string>
+#include    <unordered_map>
+#include    <utility>
+#include    <vector>
+#include    <iostream>
+
+struct Key{
+    std::string first;
+    std::string second;
+};
+
+
+struct HashFunction{
+    std::size_t operator()(const Key& key) const{
+        return std::hash<std::string>()(key.first) ^ (std::hash<std::string>()(key.second) <<1 );
+    }
+};
+
+
+
+struct KeyEqual{
+
+    bool operator()(const Key& lhs,const Key& rhs) const{
+        return lhs.first==rhs.first && lhs.second==rhs.second;
+    }
+};
+
+struct Foo{
+    friend std::ostream& operator<<(std::ostream& os,const Foo& object){
+        os<<object.value;
+        return os;
+    }
+
+    int value;
+    Foo(int _value) :value(_value) {}
+    bool operator==(const Foo& rhs) const {
+        return rhs.value==value;
+    }
+};
+
+
+// 对std::hash<T>模板参数特例化 不是很好理解
+template<>
+struct std::hash<Foo>{
+    std::size_t operator()(const Foo& object) const {
+        return std::hash<int>()(object.value);
+    }
+};
+
+
+int main(){
+
+    HashFunction hash;
+    std::string ss="m";
+    std::string sss="z";
+
+    Key key;
+    key.first=ss;
+    key.second=sss;
+
+
+    // 使用缺省的功能
+    std::unordered_map<std::string,std::string> m2={
+        {"17568068402","mengzhenchuan"},
+        {"16266218217","judy"},
+        {"1212131313","mark"},
+        {"1212131313","dhnja"}, // key 相同 hash_map直接返回 插不进去
+        {"1626621827","juddd"},
+    };
+
+    for (std::unordered_map<std::string,std::string>::value_type& val : m2){
+        std::cout<<"key "<<val.first<<" value "<<val.second<<std::endl;
+    }
+    
+    // 使用自定义的hash()
+    Foo foo1(10);
+    Foo foo2(11);
+    Foo foo3(12);
+
+    std::unordered_map<Foo,std::string,std::hash<Foo>> mm={ // 在插入之前先判断key相等吗？ 相等什么也不做 ，不等开始进行hash计算
+      {foo1,"income_1"},
+      {foo2,"income_2"},
+      {foo3,"income_3"}  
+    };
+
+    std::cout<<"-------------------"<<std::endl;
+    for (std::unordered_map<Foo,std::string>::value_type& val : mm){
+        std::cout<<"key "<<val.first<<" value "<<val.second<<std::endl;
+    }
+
+    return 1;
+}
