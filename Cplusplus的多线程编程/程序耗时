@@ -1,0 +1,8 @@
+    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+    
+   
+    HIOlAB_CXX_14::operator-(intensity_map, min_value);
+
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    
+    std::chrono::duration<double> duration = std::chrono::duration_cast<std::chrono::duration<double>>(end-start);
