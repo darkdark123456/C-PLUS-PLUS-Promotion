@@ -1,0 +1,106 @@
+#include <iostream>
+#include <atomic>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <queue>
+#include <functional>
+#include <atomic>
+
+
+/**将任何可调用对象都通过bind函数变成无参func*/
+struct Task {
+	std::function<void()> func;
+	template<typename F,typename... Args>
+	Task(F&& f, Args&&...args) {
+		func = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
+	}
+
+	Task(Task&& rhs) noexcept : func(std::move(rhs.func)) {
+		
+		rhs.func = nullptr;
+	}
+
+	Task& operator=(Task&& rhs) noexcept {
+		if (this == &rhs) { return *this; }
+		func = std::move(rhs.func); 
+		rhs.func = nullptr;
+		return *this;
+	}
+	Task() {
+
+	}
+};
+
+
+
+class ThreadPool {
+private:
+	std::vector<std::thread> threads;
+	std::queue<Task> tasks;
+	std::mutex queue_mtx;
+	std::condition_variable condition;
+	std::size_t thread_pool_size;
+public:
+	template<typename F,typename... Args>
+	void enqueue(F&& f, Args&&... args) {
+		
+		{
+			std::unique_lock<std::mutex> lock(queue_mtx);
+			tasks.emplace(std::forward<F>(f), std::forward<Args>(args)...); 
+		}
+		condition.notify_one();
+	}
+public:
+	ThreadPool(size_t num_threads) : thread_pool_size(num_threads ) {
+
+		for (size_t i = 0; i < num_threads; i++) {
+			threads.emplace_back([this]() -> void  {
+				while (true){
+					Task task;
+					{
+						std::unique_lock<std::mutex> lock(queue_mtx);
+						condition.wait(lock, [this] {return !tasks.empty(); });
+						task = std::move(tasks.front());
+						tasks.pop();
+					}
+					task.func();
+				}
+				});
+
+		}
+
+	}
+
+	~ThreadPool() {
+		for (std::thread& thread_ : threads) {
+			
+			thread_.join();
+		}
+
+	}
+	ThreadPool(const ThreadPool&) = delete;
+	ThreadPool(ThreadPool&&) = delete;
+
+};
+
+
+void ff(int i) {
+
+	std::cout <<"ff " << i <<std::endl ;
+}
+
+
+
+int main() {
+	//Task task(ff, 5); // 将ff函数和右值5包装给func对象 ，func()<---> ff(5)
+
+	ThreadPool thread_pool(5);
+	thread_pool.enqueue(ff, 1);
+	thread_pool.enqueue(ff, 2);
+	thread_pool.enqueue(ff, 3);
+	thread_pool.enqueue(ff, 4);
+
+
+	return 1;
+}
