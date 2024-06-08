@@ -1,0 +1,18 @@
+    void test() {
+        std::vector<int> vec;
+        std::string input_string_number_with_space;
+        std::cout << "input string number with space press Enter finish\n";
+        std::getline(std::cin, input_string_number_with_space);
+
+        std::istringstream iss(input_string_number_with_space);
+        int number;
+        while (iss>>number)
+        {
+            vec.push_back(number);
+        }
+
+        for (auto& number : vec) {
+
+            std::cout << number << " ";
+        }
+    }
