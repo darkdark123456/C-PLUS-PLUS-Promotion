@@ -16,3 +16,4 @@
             std::cout << number << " ";
         }
     }
+std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');在输入一个line之前在清除流的状态
