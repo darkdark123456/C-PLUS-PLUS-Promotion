@@ -1,0 +1,44 @@
+【总结】 经典的线程同步问题 生产者 消费者模型
+
+问题描述： 假设有一个环形缓冲区的容量大小为n，每个缓冲区只能存放一种商品item，生产者不断的生产放入到缓冲区中，消费者与生产者共享一块
+缓冲区 写出具体的算法步骤；
+
+u int in=0;
+u int out=0;
+semaphore mutex=1 // 将缓冲区设为临界资源
+empty =n         //空闲缓冲区的数量
+full=0          //缓冲区中商品的数量
+
+
+生产者 {
+  do {
+  生产一个item
+  wait(empty) //观察是否有空闲的缓冲区
+  wait(mutex) //将整个缓冲区进行加锁
+
+  buffer[in]=item  //将产品放入到缓冲区中
+  in =(in+1) %n    // 指针后移 指向下一个可能空的缓冲区域
+
+  signal(mutex)    //释放掉整个环形缓冲区
+  signal(full)     // 将缓冲区中的商品中的数量+1
+  }while(true)
+}
+
+
+消费者{
+  do{
+  wait（full） // 观察环形缓冲区中是否有商品
+  wait (mutex) // 如果有商品将整个缓冲区加锁
+
+  item=buffer[out]  // 拿到当前的商品
+  out=(out+n)%n     // 指针后移 想拿到后面的有的商品
+
+  signal(mutex)      // 释放掉这个缓冲区
+  signal(empty)      //  将整个缓冲区中的商品数量-1
+
+  消费掉一个商品
+  }while(true)
+
+
+
+}
