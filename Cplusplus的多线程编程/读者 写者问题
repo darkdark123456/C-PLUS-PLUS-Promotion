@@ -1,0 +1,37 @@
+现有一个写者和一群读者 ，有如下以下要求:
+1 写的时候不能读 读的时候不能写 -----读写互斥
+2 不允许有多个写者为这块内存写东西
+3 允许多个读者同时读这块内存的内容 前提是没有读者正在写
+4 系统维护一个readcount变量，表示某个时刻正在有多少用户读
+
+semaphore r_mutex=1； // 不同的读者并发的访问readcount的互斥量
+semaphore mutex=1;    //  对书籍进行加锁的互斥量
+u int read_count=0;
+
+读者{
+do{
+  wait(r_mutex);
+  if(readcount==0)      // 此时没有人登记
+    wait(mutex);       //  将整本书拿过来进行加锁
+  readcount++;        //   记录自己
+  signal(r_ mutex);  //    释放掉记录表的锁
+
+  读文件
+    
+  wait(r_ mutex);                   // 读完后修改记录表
+  readcount--;                     //  消除掉自己的访问次数
+  if(readcount==0) signal(mutex); //   如果此时已经没有读者进行读了就释放掉锁
+  signal(r_mutex);               //    释放掉记录表的锁
+}
+}while(true)
+
+
+
+写者{
+  do{
+    wait(mutex)
+    写操作
+    signal(mutex)
+  }while(true)
+}
+  
