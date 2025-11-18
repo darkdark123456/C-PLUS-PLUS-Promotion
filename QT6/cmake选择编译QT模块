@@ -1,0 +1,25 @@
+cmake .. \
+  -DCMAKE_INSTALL_PREFIX=/opt/qt6.5.3 \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DQT_BUILD_EXAMPLES=OFF \
+  -DQT_BUILD_TESTS=OFF \
+  -DQT_BUILD_BENCHMARKS=OFF \
+  -DQT_DISABLE_DEPRECATED_UP_TO=Qt_6_0_0 \
+  -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON \ 
+  -DQT_FEATURE_core=ON \
+  -DQT_FEATURE_network=ON \ 
+  -DQT_FEATURE_concurrent=ON \ 
+  -DQT_FEATURE_quick=OFF \
+  -DQT_FEATURE_quick3d=OFF \
+  -DQT_FEATURE_qml=OFF \
+  -DQT_FEATURE_gui=OFF \
+  -DQT_FEATURE_widgets=OFF \
+  -DQT_FEATURE_opengl=OFF \
+  -DQT_FEATURE_sql=OFF \
+  -DQT_FEATURE_xml=OFF \
+  -DQT_FEATURE_multimedia=OFF \
+  -DQT_FEATURE_bluetooth=OFF \
+  -DQT_FEATURE_positioning=OFF \
+  -DQT_FEATURE_sensors=OFF \
+  -DQT_FEATURE_texttospeech=OFF \
+  -DQT_FEATURE_webengine=OFF
