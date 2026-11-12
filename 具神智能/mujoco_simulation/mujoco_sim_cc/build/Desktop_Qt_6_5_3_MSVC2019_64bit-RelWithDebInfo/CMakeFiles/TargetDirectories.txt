@@ -1,5 +1,0 @@
-F:/SO_ARM101_Qt6/build/Desktop_Qt_6_5_3_MSVC2019_64bit-RelWithDebInfo/CMakeFiles/so_arm101_sim.dir
-F:/SO_ARM101_Qt6/build/Desktop_Qt_6_5_3_MSVC2019_64bit-RelWithDebInfo/CMakeFiles/edit_cache.dir
-F:/SO_ARM101_Qt6/build/Desktop_Qt_6_5_3_MSVC2019_64bit-RelWithDebInfo/CMakeFiles/rebuild_cache.dir
-F:/SO_ARM101_Qt6/build/Desktop_Qt_6_5_3_MSVC2019_64bit-RelWithDebInfo/CMakeFiles/so_arm101_sim_autogen_timestamp_deps.dir
-F:/SO_ARM101_Qt6/build/Desktop_Qt_6_5_3_MSVC2019_64bit-RelWithDebInfo/CMakeFiles/so_arm101_sim_autogen.dir
