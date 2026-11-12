@@ -1,0 +1,96 @@
+<?xml version="1.0" ?>
+<!-- ============================================================
+     so101_simple.xml —— SO-ARM101 教学简化版（无网格，基础几何体）
+     用途：理解 MuJoCo (MJCF) 的关节链写法；官方精确外观见
+           so101_new_calib.xml（带 STL 网格）。
+     结构（从上到下 6 自由度，与真实舵机 ID 对应）：
+       基座 → shoulder_pan(1) → shoulder_lift(2) → elbow_flex(3)
+            → wrist_flex(4) → wrist_roll(5) → 夹爪(6)
+     单位：长度=米，角度=度（compiler angle="degree"）
+     说明：尺寸为示意值，请按实际 CAD 测量修改（官方模型里有真实值）。
+     ============================================================ -->
+<mujoco model="so101_simple">
+
+  <!-- 角度用度，局部坐标系 -->
+  <compiler angle="degree" coordinate="local"/>
+
+  <option gravity="0 0 -9.81"/>
+
+  <!-- 默认参数：可整体调节 -->
+  <default>
+    <!-- armature 给关节加"转子惯量"，防止 kp 高时数值爆炸；阻尼让运动收敛 -->
+    <joint type="hinge" damping="0.1" frictionloss="0.02" armature="0.002"/>
+    <geom type="capsule" density="1500" rgba="0.75 0.6 0.25 1" friction="0.9"/>
+    <!-- 位置控制：kp 刚度；forcerange 限制输出力矩（避免过冲/NaN） -->
+    <position kp="50" forcerange="-2 2"/>
+  </default>
+
+  <worldbody>
+    <light pos="0.5 1.5 2.5" dir="0 0 -1" directional="true"/>
+    <!-- 地面 -->
+    <geom name="floor" type="plane" size="2 2 0.1" rgba="0.45 0.45 0.5 1"/>
+
+    <!-- ========== 基座（固定，无关节 = 焊死在世界）========== -->
+    <body name="base" pos="0 0 0.10">
+      <geom name="base_pedestal" type="cylinder" size="0.035 0.10" pos="0 0 0" rgba="0.3 0.3 0.35 1"/>
+
+      <!-- 关节1 shoulder_pan：绕竖直 Z 轴旋转 -->
+      <body name="pan_link" pos="0 0 0.10">
+        <joint name="shoulder_pan" axis="0 0 1" range="-170 170"/>
+        <geom name="pan_servo" type="cylinder" size="0.024 0.02" pos="0 0 0" rgba="0.4 0.4 0.45 1"/>
+
+        <!-- 关节2 shoulder_lift：绕 Y 轴俯仰（上臂抬起/放下） -->
+        <body name="upper_arm" pos="0 0 0.0">
+          <joint name="shoulder_lift" axis="0 1 0" range="-110 110"/>
+          <geom name="upper_arm_link" type="capsule" fromto="0 0 0 0 0 0.16" size="0.022"/>
+
+          <!-- 关节3 elbow_flex：肘部俯仰 -->
+          <body name="forearm" pos="0 0 0.16">
+            <joint name="elbow_flex" axis="0 1 0" range="-150 10"/>
+            <geom name="forearm_link" type="capsule" fromto="0 0 0 0 0 0.15" size="0.019"/>
+
+            <!-- 关节4 wrist_flex：腕部俯仰 -->
+            <body name="wrist1" pos="0 0 0.15">
+              <joint name="wrist_flex" axis="0 1 0" range="-120 120"/>
+              <geom name="wrist1_link" type="cylinder" size="0.016 0.012" pos="0 0 0" rgba="0.5 0.5 0.55 1"/>
+
+              <!-- 关节5 wrist_roll：绕前臂轴（局部 Z）旋转 -->
+              <body name="wrist2" pos="0 0 0.0">
+                <joint name="wrist_roll" axis="0 0 1" range="-180 180"/>
+                <geom name="wrist2_link" type="cylinder" size="0.014 0.012" pos="0 0 0" rgba="0.5 0.5 0.55 1"/>
+
+                <!-- ========== 夹爪（示意：两指滑动）========== -->
+                <!-- 右指：沿局部 X 滑动 -->
+                <body name="gripper_base" pos="0 0 0.03">
+                  <geom name="gripper_base_link" type="box" size="0.018 0.010 0.012" rgba="0.55 0.55 0.6 1"/>
+                  <body name="right_finger" pos="0.018 0 0.004">
+                    <joint name="right_finger" type="slide" axis="1 0 0" range="0 0.02"/>
+                    <geom name="right_finger_g" type="box" size="0.006 0.010 0.012"/>
+                  </body>
+                  <!-- 左指：用负方向滑出，范围写 [-0.02,0] 使 0=闭合 -->
+                  <body name="left_finger" pos="-0.018 0 0.004">
+                    <joint name="left_finger" type="slide" axis="1 0 0" range="-0.02 0"/>
+                    <geom name="left_finger_g" type="box" size="0.006 0.010 0.012"/>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <!-- ========== 执行器（把"控制目标"接到关节上）========== -->
+  <!-- 位置控制：ctrl 给角度（度），kp 让它跟踪；ctrlrange 给出安全范围 -->
+  <actuator>
+    <position name="shoulder_pan_act" joint="shoulder_pan" ctrlrange="-170 170"/>
+    <position name="shoulder_lift_act" joint="shoulder_lift" ctrlrange="-110 110"/>
+    <position name="elbow_flex_act" joint="elbow_flex" ctrlrange="-150 10"/>
+    <position name="wrist_flex_act" joint="wrist_flex" ctrlrange="-120 120"/>
+    <position name="wrist_roll_act" joint="wrist_roll" ctrlrange="-180 180"/>
+    <position name="right_finger_act" joint="right_finger" ctrlrange="0 0.02" kp="100"/>
+    <position name="left_finger_act" joint="left_finger" ctrlrange="-0.02 0" kp="100"/>
+  </actuator>
+
+</mujoco>
