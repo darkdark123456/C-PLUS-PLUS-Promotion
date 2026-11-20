@@ -41,7 +41,7 @@ class _dueue_iterator{
         typedef ptrdiff_t difference_type;
         typedef _dueue_iterator self;
     public:
-        _dueue_iterator(T*x,map_pointer y):cur(x),first(*y),last(*y+buffer_size()),node(y){}
+        _dueue_iterator(T*x, y):cur(x),first(*y),last(*y+buffer_size()),node(y){}
         _dueue_iterator():cur(nullptr),first(nullptr),last(nullptr),node(nullptr){}
         _dueue_iterator(const iterator&x):cur(x.cur),first(x.first),last(x.last),node(x.node){}
     public:
